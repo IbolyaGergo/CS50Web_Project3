@@ -45,7 +45,7 @@ function load_mailbox(mailbox) {
         const div = document.createElement('div');
         div.style.border = 'thin solid black';
 
-        if (email.read) {
+        if (mailbox == 'inbox' && email.read) {
           div.style.backgroundColor = 'gray';
         } else {
           div.style.backgroundColor = 'white';
@@ -53,6 +53,20 @@ function load_mailbox(mailbox) {
 
         div.classList.add('row');
         document.querySelector('#emails-view').append(div);
+        
+        // div.addEventListener('click', () => {
+        //   // console.log('Hello')
+        //   fetch(`/emails/${email.id}`)
+        //   .then(response => response.json())
+        //   .then(email => {
+        //       // Print email
+        //       console.log(email);
+
+        //       // ... do something else with email ...
+        //   });
+        // })
+
+        div.addEventListener('click', () => view_email(email))
         
         const sender_col = document.createElement('div');
         sender_col.classList.add('col-sm-4');
@@ -97,4 +111,41 @@ function send_email() {
       });
   // load_mailbox('sent');
   return false;
+}
+
+function view_email(email) {
+  fetch(`/emails/${email.id}`)
+          .then(response => response.json())
+          .then(email => {
+              // Print email
+              console.log(email);
+              // ... do something else with email ...
+              // email.read = true;
+              mark_as_read(email);
+              document.querySelector('#emails-view').innerHTML = '';
+              const div = document.createElement('div');
+              const reply_button = document.createElement('button');
+              reply_button.innerHTML = 'Reply';
+              div.innerHTML = `<strong>From: </strong>` +
+                              `${email.sender}<br>` + 
+                              `<strong>To: </strong>` +
+                              `${email.recipients}<br>` +
+                              `<strong>Subject: </strong>` +
+                              `${email.subject}<br>` +
+                              `<strong>Timestamp: </strong>` +
+                              `${email.timestamp}<br>`;
+              div.append(reply_button);
+              div.innerHTML += '<hr>';
+              div.innerHTML += `${email.body}<br>`;
+              document.querySelector('#emails-view').append(div);
+          });
+}
+
+function mark_as_read(email) {
+  fetch(`/emails/${email.id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+        read: true
+    })
+  })
 }
