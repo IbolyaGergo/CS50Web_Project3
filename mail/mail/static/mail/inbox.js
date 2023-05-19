@@ -122,6 +122,7 @@ function view_email(email, mailbox) {
                               `<strong>Timestamp: </strong>` +
                               `${email.timestamp}<br>`;
               div.append(reply_button);
+              reply_button.addEventListener('click', () => reply(email));
               if (mailbox === 'inbox') {
                 const archive_button = document.createElement('button');
                 archive_button.addEventListener('click', () => archive(email));
@@ -179,4 +180,21 @@ function unarchive(email) {
     load_mailbox('inbox');
   });
   // load_mailbox('inbox');
+}
+
+function reply(email) {
+  console.log(email.subject.substring(0, 4));
+  // Show compose view and hide other views
+  document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#compose-view').style.display = 'block';
+
+  // Clear out composition fields
+  document.querySelector('#compose-recipients').value = `${email.sender}`;
+  if (email.subject.substring(0, 4) === 'Re: ') {
+    var subject = email.subject;
+  } else {
+    var subject = `Re: ${email.subject}`;
+  }
+  document.querySelector('#compose-subject').value = subject;
+  document.querySelector('#compose-body').value = `"On ${email.timestamp} ${email.sender} wrote:\n${email.body}"\n`;
 }
