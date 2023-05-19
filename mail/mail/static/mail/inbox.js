@@ -45,7 +45,7 @@ function load_mailbox(mailbox) {
         const div = document.createElement('div');
         div.style.border = 'thin solid black';
 
-        if (mailbox == 'inbox' && email.read) {
+        if (mailbox === 'inbox' && email.read) {
           div.style.backgroundColor = 'gray';
         } else {
           div.style.backgroundColor = 'white';
@@ -54,19 +54,7 @@ function load_mailbox(mailbox) {
         div.classList.add('row');
         document.querySelector('#emails-view').append(div);
         
-        // div.addEventListener('click', () => {
-        //   // console.log('Hello')
-        //   fetch(`/emails/${email.id}`)
-        //   .then(response => response.json())
-        //   .then(email => {
-        //       // Print email
-        //       console.log(email);
-
-        //       // ... do something else with email ...
-        //   });
-        // })
-
-        div.addEventListener('click', () => view_email(email))
+        div.addEventListener('click', () => view_email(email, mailbox))
         
         const sender_col = document.createElement('div');
         sender_col.classList.add('col-sm-4');
@@ -83,9 +71,6 @@ function load_mailbox(mailbox) {
         timestamp_col.style.textAlign = 'right';
         timestamp_col.innerHTML = `${email.timestamp}`;
         div.appendChild(timestamp_col);
-        // document.querySelector('#emails-view').innerHTML = `<h3>${email}</h3>`;
-        // div.innerHTML = `<strong>${email.sender}</strong>` + ' ' + `${email.body}`;
-        // console.log(email.sender);
       });
   });
 }
@@ -113,19 +98,21 @@ function send_email() {
   return false;
 }
 
-function view_email(email) {
+function view_email(email, mailbox) {
   fetch(`/emails/${email.id}`)
           .then(response => response.json())
           .then(email => {
               // Print email
               console.log(email);
               // ... do something else with email ...
-              // email.read = true;
-              mark_as_read(email);
+              if (email.read === false) {
+                mark_as_read(email);
+              }
               document.querySelector('#emails-view').innerHTML = '';
               const div = document.createElement('div');
               const reply_button = document.createElement('button');
               reply_button.innerHTML = 'Reply';
+              reply_button.className = 'btn btn-sm btn-outline-primary';
               div.innerHTML = `<strong>From: </strong>` +
                               `${email.sender}<br>` + 
                               `<strong>To: </strong>` +
@@ -135,8 +122,25 @@ function view_email(email) {
                               `<strong>Timestamp: </strong>` +
                               `${email.timestamp}<br>`;
               div.append(reply_button);
-              div.innerHTML += '<hr>';
-              div.innerHTML += `${email.body}<br>`;
+              if (mailbox === 'inbox') {
+                const archive_button = document.createElement('button');
+                archive_button.addEventListener('click', () => archive(email));
+                archive_button.innerHTML = 'Archive';
+                archive_button.className = 'btn btn-sm btn-outline-primary';
+                div.append(archive_button);
+              } else if (mailbox === 'archive') {
+                const unarchive_button = document.createElement('button');
+                unarchive_button.addEventListener('click', () => unarchive(email));
+                unarchive_button.innerHTML = 'Unarchive';
+                unarchive_button.className = 'btn btn-sm btn-outline-primary';
+                div.append(unarchive_button);
+              }
+              const hr = document.createElement('hr');
+              div.append(hr);
+
+              const bodyText = document.createElement('div');
+              bodyText.innerHTML = email.body;
+              div.append(bodyText);
               document.querySelector('#emails-view').append(div);
           });
 }
@@ -148,4 +152,31 @@ function mark_as_read(email) {
         read: true
     })
   })
+}
+
+function archive(email) {
+  fetch(`/emails/${email.id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+        archived: true
+    })
+  })
+  .then(() => {
+    load_mailbox('inbox');
+  });
+  // load_mailbox('inbox');
+  console.log(email.archived);
+}
+
+function unarchive(email) {
+  fetch(`/emails/${email.id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+        archived: false
+    })
+  })
+  .then(() => {
+    load_mailbox('inbox');
+  });
+  // load_mailbox('inbox');
 }
